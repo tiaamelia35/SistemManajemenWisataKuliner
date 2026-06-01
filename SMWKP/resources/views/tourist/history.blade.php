@@ -6,6 +6,9 @@
 <!-- Header -->
 <header class="sticky top-0 z-50 bg-surface/90 backdrop-blur shadow-sm border-b border-outline-variant px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-3">
+        <a href="{{ url()->previous() }}" class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-surface/80 text-secondary hover:bg-surface transition">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
         <span class="material-symbols-outlined text-primary text-2xl font-bold">book_online</span>
         <h1 class="text-lg font-bold text-primary">Riwayat Booking</h1>
     </div>
@@ -94,21 +97,7 @@
     @endif
 </main>
 
-<!-- Bottom Nav Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-16 bg-surface/95 backdrop-blur border-t border-outline-variant shadow-lg max-w-xl mx-auto w-full">
-    <a href="{{ route('tourist.jelajah') }}" class="flex flex-col items-center justify-center flex-1 text-secondary hover:text-primary transition-colors">
-        <span class="material-symbols-outlined text-xl">home</span>
-        <span class="text-[10px] mt-0.5">Beranda</span>
-    </a>
-    <a href="{{ route('tourist.bookings') }}" class="flex flex-col items-center justify-center flex-1 text-primary font-bold">
-        <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">book_online</span>
-        <span class="text-[10px] mt-0.5">Booking</span>
-    </a>
-    <a href="{{ route('tourist.profile') }}" class="flex flex-col items-center justify-center flex-1 text-secondary hover:text-primary transition-colors">
-        <span class="material-symbols-outlined text-xl">account_circle</span>
-        <span class="text-[10px] mt-0.5">Profil</span>
-    </a>
-</nav>
+
 
 <script>
     function toggleDetails(id) {
