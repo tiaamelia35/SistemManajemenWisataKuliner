@@ -38,7 +38,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       // Gunakan 10.0.2.2 untuk Emulator Android.
       // Jika pakai HP Fisik, ganti dengan IP lokal komputermu (misal: 192.168.1.10:8000)
-      ..loadRequest(Uri.parse('http://10.0.2.2:8000/login')); 
+      // Ganti 192.168.1.15 dengan IP IPv4 komputermu yang asli
+      ..loadRequest(Uri.parse('http://10.0.2.2:8000/login'));
   }
 
   @override
