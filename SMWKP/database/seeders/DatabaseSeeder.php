@@ -9,6 +9,7 @@ use App\Models\Booking;
 use App\Models\Review;
 use App\Models\Certification;
 use App\Models\Log;
+use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -20,6 +21,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $faker = Faker::create();
+
         // 1. Create Core Users
         $admin = User::create([
             'name' => 'Administrator SMWKP',
@@ -273,7 +276,24 @@ class DatabaseSeeder extends Seeder
             'status' => 'pending', // Seeded as PENDING for admin review trigger!
         ]);
 
-        // 7. Create System Logs
+        // 8. Create 50 dummy users for testing
+        for ($i = 1; $i <= 20; $i++) {
+            User::factory()->create([
+                'role' => 'owner',
+                'phone_number' => $faker->phoneNumber(),
+                'profile_photo' => "owner_dummy_{$i}.jpg",
+            ]);
+        }
+
+        for ($i = 1; $i <= 30; $i++) {
+            User::factory()->create([
+                'role' => 'tourist',
+                'phone_number' => $faker->phoneNumber(),
+                'profile_photo' => "tourist_dummy_{$i}.jpg",
+            ]);
+        }
+
+        // 9. Create System Logs
         Log::write($admin->id, 'SYSTEM_START', 'Sistem Manajemen Wisata Kuliner Palembang diinisialisasi.');
         Log::write($owner1->id, 'RESTAURANT_UPDATE', 'Pemilik Budi Santoso memperbarui informasi RM Ampera Raya.');
         Log::write($tourist1->id, 'BOOKING_CREATE', 'Wisatawan John Doe melakukan reservasi meja di RM Ampera Raya.');
