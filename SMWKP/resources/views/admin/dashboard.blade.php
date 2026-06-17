@@ -211,5 +211,142 @@
 
     </div>
 
+    <!-- RESTAURANT INFORMATION & CERTIFICATION MANAGEMENT -->
+    <section class="space-y-2.5">
+        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-outlined text-base">storefront</span> Informasi Restoran & Sertifikat</h3>
+        
+        @if($allRestaurants->isEmpty())
+            <div class="bg-surface border border-outline-variant/30 p-6 rounded-2xl text-center text-gray-400 text-xs">
+                Belum ada restoran yang terdaftar.
+            </div>
+        @else
+            <div class="space-y-3">
+                @foreach($allRestaurants as $restaurant)
+                    <div class="bg-surface border border-outline-variant/30 p-4 rounded-2xl shadow-sm">
+                        <!-- Header dengan accordion toggle -->
+                        <button type="button" onclick="toggleRestaurantInfo(this)" class="w-full text-left flex items-start justify-between hover:bg-gray-50/50 -m-4 p-4 rounded-2xl transition-colors">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-sm text-on-surface">{{ $restaurant->name }}</h4>
+                                    @if($restaurant->certification_status === 'approved')
+                                        <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] font-bold px-2 py-0.5 rounded">TERSERTIFIKASI</span>
+                                    @elseif($restaurant->certification_status === 'pending')
+                                        <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[8px] font-bold px-2 py-0.5 rounded">PENDING</span>
+                                    @else
+                                        <span class="bg-rose-50 text-rose-700 border border-rose-200 text-[8px] font-bold px-2 py-0.5 rounded">DITOLAK</span>
+                                    @endif
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-0.5">Pemilik: {{ $restaurant->owner->name }}</p>
+                            </div>
+                            <span class="material-symbols-outlined text-lg text-secondary expand-icon transition-transform">expand_more</span>
+                        </button>
+
+                        <!-- Expandable Content -->
+                        <div class="restaurant-info-content hidden pt-3 border-t border-gray-100 space-y-4">
+                            <!-- View Mode -->
+                            <div class="restaurant-view-{{ $restaurant->id }} space-y-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <p class="text-[10px] font-semibold text-secondary mb-1">NAMA RESTORAN</p>
+                                        <p class="text-xs text-on-surface">{{ $restaurant->name }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-semibold text-secondary mb-1">TAHUN BERDIRI</p>
+                                        <p class="text-xs text-on-surface">{{ $restaurant->founding_year ?: 'Belum diisi' }}</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p class="text-[10px] font-semibold text-secondary mb-1">DESKRIPSI</p>
+                                    <p class="text-xs text-on-surface-variant leading-relaxed">{{ $restaurant->description ?: 'Belum ada deskripsi' }}</p>
+                                </div>
+
+                                <!-- Certifications -->
+                                <div class="pt-2 border-t border-gray-100">
+                                    <p class="text-[10px] font-bold text-primary uppercase mb-2">Sertifikat Halal</p>
+                                    @if($restaurant->certifications->isEmpty())
+                                        <p class="text-xs text-on-surface-variant">Belum ada sertifikat.</p>
+                                    @else
+                                        <div class="space-y-2">
+                                            @foreach($restaurant->certifications as $cert)
+                                                <div class="bg-gray-50/50 p-2.5 rounded-lg border border-gray-100">
+                                                    <div class="flex items-center justify-between">
+                                                        <div>
+                                                            <p class="text-[10px] font-semibold text-on-surface">{{ $cert->certificate_number }}</p>
+                                                            <p class="text-[9px] text-gray-500">Kadaluarsa: {{ $cert->expiry_date->format('d M Y') }}</p>
+                                                        </div>
+                                                        @if($cert->status === 'approved')
+                                                            <span class="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded">✓ Disetujui</span>
+                                                        @elseif($cert->status === 'pending')
+                                                            <span class="bg-amber-50 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded">⏳ Menunggu</span>
+                                                        @else
+                                                            <span class="bg-rose-50 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded">✗ Ditolak</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <button type="button" onclick="toggleEditMode('{{ $restaurant->id }}')" class="w-full mt-2 bg-primary hover:bg-primary/95 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center justify-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">edit</span> Edit Informasi
+                                </button>
+                            </div>
+
+                            <!-- Edit Mode -->
+                            <form action="{{ route('admin.restaurant.update-info', $restaurant->id) }}" method="POST" class="restaurant-edit-{{ $restaurant->id }} hidden space-y-3">
+                                @csrf
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-secondary mb-1">NAMA RESTORAN</label>
+                                    <input type="text" name="name" value="{{ $restaurant->name }}" required class="w-full text-xs p-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-gray-50/50">
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-secondary mb-1">TAHUN BERDIRI</label>
+                                    <input type="number" name="founding_year" value="{{ $restaurant->founding_year }}" min="1900" max="{{ date('Y') }}" class="w-full text-xs p-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-gray-50/50" placeholder="Contoh: 2015">
+                                </div>
+
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-secondary mb-1">DESKRIPSI RESTORAN</label>
+                                    <textarea name="description" rows="2" class="w-full text-xs p-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary bg-gray-50/50">{{ $restaurant->description }}</textarea>
+                                </div>
+
+                                <div class="flex gap-2 justify-end pt-2">
+                                    <button type="button" onclick="toggleEditMode('{{ $restaurant->id }}')" class="bg-white border border-outline text-secondary hover:bg-gray-50 text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">close</span> Batal
+                                    </button>
+                                    <button type="submit" class="bg-primary hover:bg-primary/95 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">save</span> Simpan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
 </main>
+@endsection
+
+@section('scripts')
+<script>
+    function toggleRestaurantInfo(button) {
+        const content = button.nextElementSibling;
+        const icon = button.querySelector('.expand-icon');
+        
+        content.classList.toggle('hidden');
+        icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+
+    function toggleEditMode(restaurantId) {
+        const viewDiv = document.querySelector('.restaurant-view-' + restaurantId);
+        const editForm = document.querySelector('.restaurant-edit-' + restaurantId);
+        
+        viewDiv.classList.toggle('hidden');
+        editForm.classList.toggle('hidden');
+    }
+</script>
 @endsection

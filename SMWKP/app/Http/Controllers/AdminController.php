@@ -34,6 +34,9 @@ class AdminController extends Controller
         // 4. System audit logs
         $logs = Log::with('user')->latest()->take(15)->get();
 
+        // 5. All restaurants with certifications for info management
+        $allRestaurants = Restaurant::with(['owner', 'certifications'])->get();
+
         return view('admin.dashboard', compact(
             'usersCount',
             'approvedRestaurantsCount',
@@ -43,7 +46,8 @@ class AdminController extends Controller
             'pendingCertifications',
             'allReviews',
             'pendingReviewsCount',
-            'logs'
+            'logs',
+            'allRestaurants'
         ));
     }
 
@@ -159,6 +163,27 @@ class AdminController extends Controller
             Log::write(Auth::id(), 'REVIEW_DELETE', "Admin menghapus ulasan tidak layak dari {$touristName} untuk {$restaurantName}.");
             return back()->with('success', 'Ulasan berhasil dihapus.');
         }
+    }
+
+    // Admin update restaurant info
+    public function updateRestaurantInfo(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'founding_year' => 'nullable|integer|min:1900|max:' . date('Y'),
+        ]);
+
+        $restaurant = Restaurant::findOrFail($id);
+        
+        $restaurant->name = $request->name;
+        $restaurant->description = $request->description;
+        $restaurant->founding_year = $request->founding_year;
+        $restaurant->save();
+
+        Log::write(Auth::id(), 'RESTAURANT_INFO_UPDATE', "Admin memperbarui informasi restoran {$restaurant->name} (tahun berdiri: {$request->founding_year}).");
+
+        return back()->with('success', "Informasi restoran {$restaurant->name} berhasil diperbarui!");
     }
 
     // reports & Growth Analytics

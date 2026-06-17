@@ -213,11 +213,70 @@
         @endif
     </section>
 
-    <!-- Profile & Restaurant Settings Form -->
+    <!-- Profile & Restaurant Settings -->
     <section class="bg-surface border border-outline-variant/30 p-4 rounded-2xl shadow-sm space-y-4">
-        <h3 class="font-bold text-xs text-secondary uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-outlined text-base">storefront</span> Informasi Restoran & Sertifikat</h3>
-        
-        <form action="{{ route('owner.restaurant.update') }}" method="POST" enctype="multipart/form-data" class="space-y-3.5">
+        <div class="flex justify-between items-center">
+            <h3 class="font-bold text-xs text-secondary uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-outlined text-base">storefront</span> Informasi Restoran & Sertifikat</h3>
+            <button type="button" id="toggleEditBtn" onclick="toggleRestaurantEditMode()" class="text-primary hover:text-primary-container text-xs font-semibold flex items-center gap-0.5 px-3 py-1.5 hover:bg-primary/5 rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-sm">edit</span> Edit
+            </button>
+        </div>
+
+        <!-- VIEW MODE -->
+        <div id="restaurantViewMode" class="space-y-3">
+            <div>
+                <p class="text-[10px] font-semibold text-secondary mb-1">NAMA RESTORAN KULINER</p>
+                <p class="text-xs text-on-surface font-medium">{{ $restaurant->name }}</p>
+            </div>
+
+            <div>
+                <p class="text-[10px] font-semibold text-secondary mb-1">DESKRIPSI KULINER</p>
+                <p class="text-xs text-on-surface-variant leading-relaxed">{{ $restaurant->description ?: 'Belum ada deskripsi' }}</p>
+            </div>
+
+            <div>
+                <p class="text-[10px] font-semibold text-secondary mb-1">ALAMAT RESTORAN LENGKAP</p>
+                <p class="text-xs text-on-surface font-medium">{{ $restaurant->address }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <p class="text-[10px] font-semibold text-secondary mb-1">LATITUDE</p>
+                    <p class="text-xs text-on-surface font-mono">{{ $restaurant->latitude ?: '-2.983333' }}</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-semibold text-secondary mb-1">LONGITUDE</p>
+                    <p class="text-xs text-on-surface font-mono">{{ $restaurant->longitude ?: '104.75' }}</p>
+                </div>
+            </div>
+
+            <!-- View Certifications Status -->
+            <div class="pt-3 border-t border-gray-100 space-y-2">
+                <p class="text-xs font-bold text-primary uppercase">Status Sertifikasi Halal</p>
+                @if($certifications->isEmpty())
+                    <p class="text-xs text-on-surface-variant">Belum ada sertifikat halal yang didaftarkan.</p>
+                @else
+                    @foreach($certifications as $cert)
+                        <div class="bg-gray-50/50 p-2.5 rounded-lg border border-gray-100">
+                            <div class="flex items-start justify-between mb-1">
+                                <p class="text-[10px] font-semibold text-on-surface">{{ $cert->certificate_number }}</p>
+                                @if($cert->status === 'approved')
+                                    <span class="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-1.5 py-0.5 rounded">Disetujui</span>
+                                @elseif($cert->status === 'pending')
+                                    <span class="bg-amber-50 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded">Menunggu</span>
+                                @else
+                                    <span class="bg-rose-50 text-rose-700 text-[8px] font-bold px-1.5 py-0.5 rounded">Ditolak</span>
+                                @endif
+                            </div>
+                            <p class="text-[9px] text-gray-500">Kadaluarsa: {{ $cert->expiry_date->format('d M Y') }}</p>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+        </div>
+
+        <!-- EDIT MODE -->
+        <form action="{{ route('owner.restaurant.update') }}" method="POST" enctype="multipart/form-data" id="restaurantEditMode" class="hidden space-y-3.5">
             @csrf
             <div>
                 <label class="block text-[10px] font-semibold text-secondary mb-1">NAMA RESTORAN KULINER</label>
@@ -270,7 +329,10 @@
                 </div>
             </div>
 
-            <div class="flex justify-end pt-2">
+            <div class="flex gap-2 justify-end pt-2">
+                <button type="button" onclick="toggleRestaurantEditMode()" class="bg-white border border-outline text-secondary hover:bg-gray-50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">close</span> Batal
+                </button>
                 <button type="submit" class="bg-primary hover:bg-primary/95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md transition-colors flex items-center gap-1">
                     Simpan Informasi Resto <span class="material-symbols-outlined text-xs">save</span>
                 </button>
@@ -283,37 +345,62 @@
 
 @section('scripts')
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Map select functionality
-        var latInput = document.getElementById('lat-select');
-        var lngInput = document.getElementById('lng-select');
+    let mapSelect = null;
+    let mapInitialized = false;
+
+    function toggleRestaurantEditMode() {
+        const viewMode = document.getElementById('restaurantViewMode');
+        const editMode = document.getElementById('restaurantEditMode');
+        const toggleBtn = document.getElementById('toggleEditBtn');
+
+        // Toggle visibility
+        viewMode.classList.toggle('hidden');
+        editMode.classList.toggle('hidden');
+
+        // If showing edit mode and map not initialized, initialize it
+        if (editMode.classList.contains('hidden') === false && !mapInitialized) {
+            setTimeout(initializeMap, 100);
+        }
+    }
+
+    function initializeMap() {
+        if (mapInitialized) return;
+
+        const latInput = document.getElementById('lat-select');
+        const lngInput = document.getElementById('lng-select');
         
-        var startLat = parseFloat(latInput.value) || -2.983333;
-        var startLng = parseFloat(lngInput.value) || 104.75;
+        const startLat = parseFloat(latInput.value) || -2.983333;
+        const startLng = parseFloat(lngInput.value) || 104.75;
         
-        var mapSelect = L.map('map-select').setView([startLat, startLng], 14);
+        mapSelect = L.map('map-select').setView([startLat, startLng], 14);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
         }).addTo(mapSelect);
         
-        var activeMarker = L.marker([startLat, startLng], {draggable: true}).addTo(mapSelect);
+        const activeMarker = L.marker([startLat, startLng], {draggable: true}).addTo(mapSelect);
         
         // Listen to marker drag events to auto update lat/lng inputs
         activeMarker.on('dragend', function(event) {
-            var position = activeMarker.getLatLng();
+            const position = activeMarker.getLatLng();
             latInput.value = position.lat.toFixed(6);
             lngInput.value = position.lng.toFixed(6);
         });
 
         // Click on map listener to relocate marker
         mapSelect.on('click', function(event) {
-            var position = event.latlng;
+            const position = event.latlng;
             activeMarker.setLatLng(position);
             latInput.value = position.lat.toFixed(6);
             lngInput.value = position.lng.toFixed(6);
         });
+
+        mapInitialized = true;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Maps will be initialized when user clicks Edit button
     });
 </script>
 @endsection
