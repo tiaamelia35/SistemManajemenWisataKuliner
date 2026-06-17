@@ -46,5 +46,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/verify/restaurant/{id}', [AdminController::class, 'verifyRestaurant'])->name('admin.verify.restaurant');
     Route::post('/admin/verify/certification/{id}', [AdminController::class, 'verifyCertification'])->name('admin.verify.certification');
     Route::post('/admin/reviews/{id}/status', [AdminController::class, 'updateReviewStatus'])->name('admin.reviews.status');
+    Route::post('/admin/restaurant/{id}/update-info', [AdminController::class, 'updateRestaurantInfo'])->name('admin.restaurant.update-info');
     Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
 });
